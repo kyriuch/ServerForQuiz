@@ -16,7 +16,9 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 300, 275));
         primaryStage.show();
 
-        ThreadsManager.getInstance().addNewThread(new ClientsListener(new GameManager(), new ClientsManager()));
+        Injector injector = new Injector();
+
+        ((ThreadsManager) injector.get("ThreadsManager")).addNewThread(new ClientsListener());
     }
 
 
