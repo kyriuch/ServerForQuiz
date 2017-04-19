@@ -14,10 +14,15 @@ public class ClientsManager {
     }
 
     public void addClient(ClientSocket clientSocket) {
+        System.out.println("NEW CLIENT");
         list.add(clientSocket);
     }
 
     public void removeClient(ClientSocket clientSocket) {
         list.remove(clientSocket);
+    }
+
+    public List<ClientSocket> getList() {
+        return list;
     }
 }

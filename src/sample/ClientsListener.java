@@ -11,6 +11,8 @@ public class ClientsListener implements Runnable {
     public ClientsListener(GameManager gameManager, ClientsManager clientsManager) {
         this.gameManager = gameManager;
         this.clientsManager = clientsManager;
+        gameManager.setClientsManager(clientsManager);
+        gameManager.run();
     }
 
     @Override

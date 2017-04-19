@@ -12,6 +12,7 @@ public class ClientSocket implements Runnable {
 
     private PrintWriter printWriter;
     private BufferedReader bufferedReader;
+    private ObjectOutputStream objectOutputStream;
 
     public ClientSocket(Socket socket) {
         this.socket = socket;
@@ -24,15 +25,28 @@ public class ClientSocket implements Runnable {
         try {
             printWriter = new PrintWriter(socket.getOutputStream(), true);
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+            isRunning = false;
+        }
+
+        printWriter.println("QUESTION_COMING");
+        try {
+            objectOutputStream.writeObject(gameManager.getCurrentQuestionPlusAnswer());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        printWriter.println("Witaj");
 
         while(isRunning) {
             try {
-                System.out.println(bufferedReader.readLine());
+                String line = bufferedReader.readLine();
+                if(gameManager.putAnswer(new Answer(line))) {
+                    printWriter.println("CORRECT");
+                } else {
+                    printWriter.println("WRONG");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 isRunning = false;
@@ -51,5 +65,13 @@ public class ClientSocket implements Runnable {
 
     public void setGameManager(GameManager gameManager) {
         this.gameManager = gameManager;
+    }
+
+    public PrintWriter getPrintWriter() {
+        return printWriter;
+    }
+
+    public ObjectOutputStream getObjectOutputStream() {
+        return objectOutputStream;
     }
 }

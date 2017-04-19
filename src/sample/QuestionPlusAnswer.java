@@ -30,4 +30,9 @@ public class QuestionPlusAnswer implements Serializable {
     public void setAnswer(Answer answer) {
         this.answer = answer;
     }
+
+    @Override
+    public String toString() {
+        return question + ":" + answer;
+    }
 }
