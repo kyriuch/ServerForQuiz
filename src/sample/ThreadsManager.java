@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 public class ThreadsManager {
     private ExecutorService executorService;
 
-    private ThreadsManager() {
+    public ThreadsManager() {
         executorService = Executors.newCachedThreadPool();
     }
 

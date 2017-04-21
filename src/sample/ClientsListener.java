@@ -5,15 +5,6 @@ import java.net.ServerSocket;
 
 public class ClientsListener implements Runnable {
     private boolean isRunning;
-    private GameManager gameManager;
-    private ClientsManager clientsManager;
-
-    public ClientsListener(GameManager gameManager, ClientsManager clientsManager) {
-        this.gameManager = gameManager;
-        this.clientsManager = clientsManager;
-        gameManager.setClientsManager(clientsManager);
-        gameManager.run();
-    }
 
     @Override
     public void run() {
@@ -33,12 +24,13 @@ public class ClientsListener implements Runnable {
 
         while(isRunning) {
             try {
+                Injector injector = new Injector();
+                ClientsManager clientsManager = (ClientsManager) injector.get("ClientsManager");
+                ThreadsManager threadsManager = (ThreadsManager) injector.get("ThreadsManager");
                 ClientSocket clientSocket = new ClientSocket(socket.accept());
-                clientSocket.setClientsManager(clientsManager);
-                clientSocket.setGameManager(gameManager);
                 clientsManager.addClient(clientSocket);
-                ThreadsManager.getInstance().addNewThread(clientSocket);
-            } catch (IOException e) {
+                threadsManager.addNewThread(clientSocket);
+            } catch (IOException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         }
