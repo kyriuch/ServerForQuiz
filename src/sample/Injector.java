@@ -3,15 +3,14 @@ package sample;
 import java.util.HashMap;
 
 public class Injector {
-    private HashMap<String, Object> hashMap = new HashMap<>();
+    private static HashMap<Class, Object> hashMap = new HashMap<>();
 
-    public Object get(String type) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        if(!hashMap.containsKey(type)) {
-            Class c = Class.forName("sample." + type);
-            Object output = c.newInstance();
-            hashMap.put(type, output);
+    public Object get(Class key) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if(!hashMap.containsKey(key)) {
+            Object output = key.newInstance();
+            hashMap.put(key, output);
         }
 
-        return hashMap.get(type);
+        return hashMap.get(key);
     }
 }

@@ -25,8 +25,8 @@ public class ClientsListener implements Runnable {
         while(isRunning) {
             try {
                 Injector injector = new Injector();
-                ClientsManager clientsManager = (ClientsManager) injector.get("ClientsManager");
-                ThreadsManager threadsManager = (ThreadsManager) injector.get("ThreadsManager");
+                ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
+                ThreadsManager threadsManager = (ThreadsManager) injector.get(ThreadsManager.class);
                 ClientSocket clientSocket = new ClientSocket(socket.accept());
                 clientsManager.addClient(clientSocket);
                 threadsManager.addNewThread(clientSocket);

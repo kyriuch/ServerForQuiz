@@ -1,8 +1,6 @@
 package sample;
 
-import java.io.Serializable;
-
-public class QuestionPlusAnswer implements Serializable {
+public class QuestionPlusAnswer {
     private Question question;
     private Answer answer;
 

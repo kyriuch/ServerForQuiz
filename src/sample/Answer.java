@@ -1,8 +1,6 @@
 package sample;
 
-import java.io.Serializable;
-
-public class Answer implements Serializable {
+public class Answer {
     private String content;
 
     public Answer(String content) {

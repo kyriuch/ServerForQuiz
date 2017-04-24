@@ -18,7 +18,7 @@ public class Main extends Application {
 
         Injector injector = new Injector();
 
-        ((ThreadsManager) injector.get("ThreadsManager")).addNewThread(new ClientsListener());
+        ((ThreadsManager) injector.get(ThreadsManager.class)).addNewThread(new ClientsListener());
     }
 
 

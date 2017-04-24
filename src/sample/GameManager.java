@@ -9,26 +9,39 @@ import java.io.PrintWriter;
 import java.util.Map;
 
 public class GameManager implements Runnable {
-    QuestionsAndAnswersContainer questionsAndAnswersContainer;
-    QuestionPlusAnswer currentQuestionPlusAnswer;
-    ClientsManager clientsManager;
-    private static int id = 0;
+    private QuestionsAndAnswersContainer questionsAndAnswersContainer;
+    private QuestionPlusAnswer currentQuestionPlusAnswer;
+    boolean isRunning = false;
 
-    private void sendQuestionToClients(QuestionPlusAnswer question) {
-        clientsManager.getList().stream()
-                .map(clientSocket -> new Object[]{clientSocket.getPrintWriter(), clientSocket.getObjectOutputStream()})
-                .forEach(tab -> {
-            ((PrintWriter) tab[0]).println("QUESTION_COMING");
-            try {
-                ((ObjectOutputStream) tab[1]).writeObject(question);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+    private void sendQuestionToClients(QuestionPlusAnswer question) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        Injector injector = new Injector();
+        ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
+
+        if(clientsManager.getList() != null && !clientsManager.getList().isEmpty()) {
+            clientsManager.getList().stream()
+                    .map(clientSocket -> new Object[]{clientSocket.getPrintWriter(), clientSocket.getObjectOutputStream()})
+                    .forEach(tab -> {
+                        if(tab[0] != null && tab[1] != null) {
+                            ((PrintWriter) tab[0]).println("QUESTION_COMING");
+                            try {
+                                ((ObjectOutputStream) tab[1]).writeObject(question);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+        }
+    }
+
+    public GameManager() {
+        if(!isRunning) {
+            run();
+        }
     }
 
     @Override
     public void run() {
+        isRunning = true;
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
@@ -41,7 +54,6 @@ public class GameManager implements Runnable {
 
             currentQuestionPlusAnswer.setAnswer(firstEntry.getValue());
             currentQuestionPlusAnswer.setQuestion(firstEntry.getKey());
-            sendQuestionToClients(currentQuestionPlusAnswer);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -75,11 +87,15 @@ public class GameManager implements Runnable {
         return false;
     }
 
-    public void setClientsManager(ClientsManager clientsManager) {
-        this.clientsManager = clientsManager;
-    }
-
     public QuestionPlusAnswer getCurrentQuestionPlusAnswer() {
         return currentQuestionPlusAnswer;
+    }
+
+    public Question getCurrentQuestion() {
+        return currentQuestionPlusAnswer.getQuestion();
+    }
+
+    public Answer getCurrentAnswer() {
+        return currentQuestionPlusAnswer.getAnswer();
     }
 }

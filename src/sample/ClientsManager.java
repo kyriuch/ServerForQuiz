@@ -14,7 +14,6 @@ public class ClientsManager {
     }
 
     public void addClient(ClientSocket clientSocket) {
-        System.out.println("NEW CLIENT");
         list.add(clientSocket);
     }
 
