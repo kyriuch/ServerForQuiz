@@ -7,7 +7,7 @@ public class TcpMessage implements Serializable {
     private Class outClass;
 
     public TcpMessage(Object outObject, Class outClass) {
-        this.outObject = outObject;
+        this.outObject = outClass.cast(outObject);
         this.outClass = outClass;
     }
 
