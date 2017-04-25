@@ -1,19 +1,19 @@
 package sample;
 
-import com.sun.xml.internal.ws.developer.SerializationFeature;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.Modifier;
 import java.net.Socket;
 
 public class ClientSocket implements Runnable {
     private Socket socket;
     private boolean isRunning;
 
-    private PrintWriter printWriter;
+    private ObjectOutputStream objectOutputStream;
     private BufferedReader bufferedReader;
 
     public ClientSocket(Socket socket) {
@@ -37,7 +37,7 @@ public class ClientSocket implements Runnable {
         }
 
         try {
-            printWriter = new PrintWriter(socket.getOutputStream(), true);
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
             e.printStackTrace();
@@ -46,25 +46,23 @@ public class ClientSocket implements Runnable {
 
         assert gameManager != null;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-
         try {
-            printWriter.println((objectMapper.writeValueAsString(
-                    new TcpMessage(gameManager.getCurrentQuestion(), Question.class)
-            )));
+            objectOutputStream.writeObject(new TcpMessage(gameManager.getCurrentQuestion(), Question.class.getName()));
+            objectOutputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+
         logger.info("Sent " + gameManager.getCurrentQuestion());
 
-        while(isRunning) {
+        while (isRunning) {
             try {
                 String line = bufferedReader.readLine();
-                if(gameManager.putAnswer(new Answer(line))) {
-                    printWriter.println("CORRECT");
+                if (gameManager.putAnswer(new Answer(line))) {
+                    // good answer
                 } else {
-                    printWriter.println("WRONG");
+                    // wrong answer
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -81,13 +79,13 @@ public class ClientSocket implements Runnable {
         isRunning = false;
 
         bufferedReader.close();
-        printWriter.close();
+        objectOutputStream.close();
         Injector injector = new Injector();
         ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
         clientsManager.removeClient(this);
     }
 
-    public PrintWriter getPrintWriter() {
-        return printWriter;
+    public ObjectOutputStream getObjectOutputStream() {
+        return objectOutputStream;
     }
 }

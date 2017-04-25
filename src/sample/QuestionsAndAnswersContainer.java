@@ -1,13 +1,15 @@
 package sample;
 
-import java.util.LinkedHashMap;
+import com.google.gson.annotations.SerializedName;
+
+import java.util.HashMap;
 import java.util.Map;
 
 public class QuestionsAndAnswersContainer {
-    private LinkedHashMap<Question, Answer> hashMap = new LinkedHashMap<Question, Answer>();
+    private Map<Question, Answer> map = new HashMap<>();
 
-    public QuestionsAndAnswersContainer(LinkedHashMap<Question, Answer> hashMap) {
-        this.hashMap = hashMap;
+    public QuestionsAndAnswersContainer(Map<Question, Answer> map) {
+        this.map = map;
     }
 
     public QuestionsAndAnswersContainer() {
@@ -15,22 +17,14 @@ public class QuestionsAndAnswersContainer {
     }
 
     public void addQuestionAndAnswer(Question question, Answer answer) {
-        hashMap.put(question, answer);
+        map.put(question, answer);
     }
 
-    public LinkedHashMap<Question, Answer> getHashMap() {
-        return hashMap;
+    public Map<Question, Answer> getMap() {
+        return map;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder result = new StringBuilder();
-
-        for(Map.Entry<Question, Answer> entry:hashMap.entrySet()) {
-            result.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
-        }
-
-        return result.toString();
-
+    public void setMap(Map<Question, Answer> map) {
+        this.map = map;
     }
 }

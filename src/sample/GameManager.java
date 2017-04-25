@@ -1,11 +1,10 @@
 package sample;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -21,10 +20,15 @@ public class GameManager implements Runnable {
 
         if (clientsManager.getList() != null && !clientsManager.getList().isEmpty()) {
             clientsManager.getList().stream()
-                    .map(ClientSocket::getPrintWriter)
-                    .forEach(printer -> {
-                        if (printer != null) {
-                            printer.println("QUESTION_COMING");
+                    .map(ClientSocket::getObjectOutputStream)
+                    .forEach(outputStream -> {
+                        if (outputStream != null) {
+                            try {
+                                outputStream.writeObject(currentQuestion);
+                                outputStream.flush();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     });
         }
@@ -39,24 +43,23 @@ public class GameManager implements Runnable {
     @Override
     public void run() {
         isRunning = true;
-        ObjectMapper objectMapper = new ObjectMapper();
+        Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
 
         try {
-            questionsAndAnswersContainer = objectMapper
-                    .readValue(new File("D:\\result.json"), QuestionsAndAnswersContainer.class);
-
-            Map.Entry<Question, Answer> firstEntry = questionsAndAnswersContainer.getHashMap().entrySet().iterator().next();
-
-            currentQuestion = new Question(firstEntry.getKey().getContent());
-            currentAnswer = new Answer(firstEntry.getValue().getContent());
-        } catch (IOException e) {
+            questionsAndAnswersContainer = gson.fromJson(new FileReader("D:\\result.json"), QuestionsAndAnswersContainer.class);
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+
+        Map.Entry<Question, Answer> firstEntry = questionsAndAnswersContainer.getMap().entrySet().iterator().next();
+
+        currentQuestion = new Question(firstEntry.getKey().getContent());
+        currentAnswer = new Answer(firstEntry.getValue().getContent());
     }
 
     public boolean putAnswer(Answer answer) {
         if (answer.getContent().equals(currentAnswer.getContent())) {
-            Iterator it = questionsAndAnswersContainer.getHashMap().entrySet().iterator();
+            Iterator it = questionsAndAnswersContainer.getMap().entrySet().iterator();
 
             while (it.hasNext()) {
                 Map.Entry entry = (Map.Entry) it.next();
@@ -67,7 +70,7 @@ public class GameManager implements Runnable {
                     if (it.hasNext()) {
                         entry = (Map.Entry) it.next();
                     } else {
-                        it = questionsAndAnswersContainer.getHashMap().entrySet().iterator();
+                        it = questionsAndAnswersContainer.getMap().entrySet().iterator();
                         entry = (Map.Entry) it.next();
                     }
 

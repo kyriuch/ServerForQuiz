@@ -4,11 +4,11 @@ import java.io.Serializable;
 
 public class TcpMessage implements Serializable {
     private Object outObject;
-    private Class outClass;
+    private String outType;
 
-    public TcpMessage(Object outObject, Class outClass) {
-        this.outObject = outClass.cast(outObject);
-        this.outClass = outClass;
+    public TcpMessage(Object outObject, String outType) {
+        this.outObject = outObject;
+        this.outType = outType;
     }
 
     public TcpMessage() {
@@ -19,15 +19,15 @@ public class TcpMessage implements Serializable {
         return outObject;
     }
 
-    public Class getOutClass() {
-        return outClass;
+    public String getOutType() {
+        return outType;
     }
 
     public void setOutObject(Object outObject) {
         this.outObject = outObject;
     }
 
-    public void setOutClass(Class outClass) {
-        this.outClass = outClass;
+    public void setOutClass(String outType) {
+        this.outType = outType;
     }
 }
