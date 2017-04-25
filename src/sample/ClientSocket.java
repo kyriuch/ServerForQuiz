@@ -1,5 +1,8 @@
 package sample;
 
+import com.sun.xml.internal.ws.developer.SerializationFeature;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +15,6 @@ public class ClientSocket implements Runnable {
 
     private PrintWriter printWriter;
     private BufferedReader bufferedReader;
-    private ObjectOutputStream objectOutputStream;
 
     public ClientSocket(Socket socket) {
         this.socket = socket;
@@ -35,30 +37,26 @@ public class ClientSocket implements Runnable {
         }
 
         try {
-            OutputStream os = socket.getOutputStream();
-            printWriter = new PrintWriter(os);
-            objectOutputStream = new ObjectOutputStream(os);
+            printWriter = new PrintWriter(socket.getOutputStream(), true);
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
             e.printStackTrace();
             isRunning = false;
         }
 
-        printWriter.println("QUESTION_COMING");
-        printWriter.flush();
-        logger.info("Sent phrase \"QUESTION COMING\"");
+        assert gameManager != null;
 
+        ObjectMapper objectMapper = new ObjectMapper();
 
         try {
-            assert gameManager != null;
-
-            objectOutputStream.writeObject(gameManager.getCurrentQuestion());
-            objectOutputStream.flush();
-
-            logger.info("Sent " + gameManager.getCurrentQuestion());
+            printWriter.println((objectMapper.writeValueAsString(
+                    new TcpMessage(gameManager.getCurrentQuestion(), Question.class)
+            )));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        logger.info("Sent " + gameManager.getCurrentQuestion());
 
         while(isRunning) {
             try {
@@ -83,7 +81,6 @@ public class ClientSocket implements Runnable {
         isRunning = false;
 
         bufferedReader.close();
-        objectOutputStream.close();
         printWriter.close();
         Injector injector = new Injector();
         ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
@@ -92,9 +89,5 @@ public class ClientSocket implements Runnable {
 
     public PrintWriter getPrintWriter() {
         return printWriter;
-    }
-
-    public ObjectOutputStream getObjectOutputStream() {
-        return objectOutputStream;
     }
 }
