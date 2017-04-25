@@ -14,7 +14,7 @@ public class ClientSocket implements Runnable {
     private boolean isRunning;
 
     private ObjectOutputStream objectOutputStream;
-    private BufferedReader bufferedReader;
+    private ObjectInputStream objectInputStream;
 
     public ClientSocket(Socket socket) {
         this.socket = socket;
@@ -38,7 +38,7 @@ public class ClientSocket implements Runnable {
 
         try {
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
             isRunning = false;
@@ -47,23 +47,30 @@ public class ClientSocket implements Runnable {
         assert gameManager != null;
 
         try {
-            objectOutputStream.writeObject(new TcpMessage(gameManager.getCurrentQuestion(), Question.class.getName()));
+            objectOutputStream.writeObject(new TcpMessage(gameManager.getCurrentQuestion(), Question.class));
             objectOutputStream.flush();
+            logger.info("Sent Question TcpMessage");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            objectOutputStream.writeObject(new TcpMessage(
+                    new ChatMessage("NRMAL", "15-05-1995", "15:55",
+                            "kyriuch", "tresc wiadomosci"), ChatMessage.class));
+            objectOutputStream.flush();
+            logger.info("Sent ChatMessage TcpMessage");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
 
-        logger.info("Sent " + gameManager.getCurrentQuestion());
-
         while (isRunning) {
             try {
-                String line = bufferedReader.readLine();
-                if (gameManager.putAnswer(new Answer(line))) {
-                    // good answer
-                } else {
-                    // wrong answer
-                }
+                TcpMessage tcpMessage = (TcpMessage) objectInputStream.readObject();
+                logger.info("Got TcpMessage - " + String.valueOf(tcpMessage));
+
+                proceedIncomingTcpMessage(tcpMessage);
             } catch (IOException e) {
                 e.printStackTrace();
                 try {
@@ -71,6 +78,8 @@ public class ClientSocket implements Runnable {
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException | IOException e1) {
                     e1.printStackTrace();
                 }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -78,7 +87,7 @@ public class ClientSocket implements Runnable {
     public void stop() throws IllegalAccessException, InstantiationException, ClassNotFoundException, IOException {
         isRunning = false;
 
-        bufferedReader.close();
+        objectInputStream.close();
         objectOutputStream.close();
         Injector injector = new Injector();
         ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
@@ -87,5 +96,8 @@ public class ClientSocket implements Runnable {
 
     public ObjectOutputStream getObjectOutputStream() {
         return objectOutputStream;
+    }
+
+    private void proceedIncomingTcpMessage(TcpMessage tcpMessage) {
     }
 }

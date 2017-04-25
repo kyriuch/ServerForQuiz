@@ -14,7 +14,7 @@ public class GameManager implements Runnable {
     private Answer currentAnswer;
     boolean isRunning = false;
 
-    private void sendQuestionToClients(Question question) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    private void sendTcpMessageToAllClients(TcpMessage tcpMessage) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         Injector injector = new Injector();
         ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
 
@@ -24,7 +24,7 @@ public class GameManager implements Runnable {
                     .forEach(outputStream -> {
                         if (outputStream != null) {
                             try {
-                                outputStream.writeObject(currentQuestion);
+                                outputStream.writeObject(tcpMessage);
                                 outputStream.flush();
                             } catch (IOException e) {
                                 e.printStackTrace();
