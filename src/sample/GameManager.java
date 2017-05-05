@@ -13,7 +13,7 @@ public class GameManager implements Runnable {
     private Answer currentAnswer;
     boolean isRunning = false;
 
-    private void sendTcpMessageToAllClients(TcpMessage tcpMessage) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    public void sendTcpMessageToAllClients(TcpMessage tcpMessage) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         Injector injector = new Injector();
         ClientsManager clientsManager = (ClientsManager) injector.get(ClientsManager.class);
 
@@ -57,7 +57,7 @@ public class GameManager implements Runnable {
     }
 
     public boolean putAnswer(Answer answer) {
-        if (answer.getContent().equals(currentAnswer.getContent())) {
+        if (answer.getContent().equalsIgnoreCase(currentAnswer.getContent())) {
             Iterator it = questionsAndAnswersContainer.getMap().entrySet().iterator();
 
             while (it.hasNext()) {

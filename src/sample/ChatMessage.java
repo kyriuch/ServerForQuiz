@@ -1,6 +1,8 @@
 package sample;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ChatMessage implements Serializable {
     private String type;
@@ -8,11 +10,14 @@ public class ChatMessage implements Serializable {
     private String hour;
     private String user;
     private String message;
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("DD.MM.YYYY");
+    private static SimpleDateFormat simpleHourFormat = new SimpleDateFormat("HH:mm");
 
-    public ChatMessage(String type, String date, String hour, String user, String message) {
+    public ChatMessage(String type, String user, String message) {
+        Date date = new Date();
         this.type = type;
-        this.date = date;
-        this.hour = hour;
+        this.date = simpleDateFormat.format(date);
+        this.hour = simpleHourFormat.format(date);
         this.user = user;
         this.message = message;
     }

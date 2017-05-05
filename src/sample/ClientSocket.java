@@ -1,12 +1,9 @@
 package sample;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.reflect.Modifier;
 import java.net.Socket;
 
 public class ClientSocket implements Runnable {
@@ -55,15 +52,11 @@ public class ClientSocket implements Runnable {
         }
 
         try {
-            objectOutputStream.writeObject(new TcpMessage(
-                    new ChatMessage("NRMAL", "15-05-1995", "15:55",
-                            "kyriuch", "tresc wiadomosci"), ChatMessage.class));
-            objectOutputStream.flush();
-            logger.info("Sent ChatMessage TcpMessage");
-        } catch (IOException e) {
+            gameManager.sendTcpMessageToAllClients(new TcpMessage(
+                    new ChatMessage("SERVER", "SERVER", "New user connected"), ChatMessage.class));
+        } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-
 
         while (isRunning) {
             try {
@@ -99,5 +92,37 @@ public class ClientSocket implements Runnable {
     }
 
     private void proceedIncomingTcpMessage(TcpMessage tcpMessage) {
+
+        if (tcpMessage.getOutClass().equals(ChatMessage.class)) {
+            tcpMessage.setHandler(o -> {
+                Injector injector = new Injector();
+
+                try {
+                    GameManager gameManager = (GameManager) injector.get(GameManager.class);
+                    gameManager.sendTcpMessageToAllClients(new TcpMessage(o, ChatMessage.class));
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    e.printStackTrace();
+                }
+
+
+            });
+        }else if(tcpMessage.getOutClass().equals(Answer.class)) {
+            tcpMessage.setHandler(o -> {
+                Injector injector = new Injector();
+
+                try {
+                    GameManager gameManager = (GameManager) injector.get(GameManager.class);
+                    if(gameManager.putAnswer((Answer) o)) {
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage(
+                                gameManager.getCurrentQuestion(), Question.class
+                        ));
+                    };
+                } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        tcpMessage.executeHandler();
     }
 }
