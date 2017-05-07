@@ -25,6 +25,7 @@ public class GameManager implements Runnable {
                             try {
                                 outputStream.writeObject(tcpMessage);
                                 outputStream.flush();
+                                outputStream.reset();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }

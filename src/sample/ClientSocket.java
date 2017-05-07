@@ -44,24 +44,18 @@ public class ClientSocket implements Runnable {
         assert gameManager != null;
 
         try {
-            objectOutputStream.writeObject(new TcpMessage(gameManager.getCurrentQuestion(), Question.class));
+            objectOutputStream.writeObject(new TcpMessage("SERVER", gameManager.getCurrentQuestion(), Question.class));
             objectOutputStream.flush();
+            objectOutputStream.reset();
             logger.info("Sent Question TcpMessage");
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            gameManager.sendTcpMessageToAllClients(new TcpMessage(
-                    new ChatMessage("SERVER", "SERVER", "New user connected"), ChatMessage.class));
-        } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
         while (isRunning) {
             try {
                 TcpMessage tcpMessage = (TcpMessage) objectInputStream.readObject();
-                logger.info("Got TcpMessage - " + String.valueOf(tcpMessage));
+                logger.info("Got TcpMessage - " + String.valueOf(tcpMessage) + " from " + tcpMessage.getFrom());
 
                 proceedIncomingTcpMessage(tcpMessage);
             } catch (IOException e) {
@@ -71,7 +65,7 @@ public class ClientSocket implements Runnable {
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException | IOException e1) {
                     e1.printStackTrace();
                 }
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 e.printStackTrace();
             }
         }
@@ -91,7 +85,7 @@ public class ClientSocket implements Runnable {
         return objectOutputStream;
     }
 
-    private void proceedIncomingTcpMessage(TcpMessage tcpMessage) {
+    private void proceedIncomingTcpMessage(TcpMessage tcpMessage) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
 
         if (tcpMessage.getOutClass().equals(ChatMessage.class)) {
             tcpMessage.setHandler(o -> {
@@ -99,24 +93,69 @@ public class ClientSocket implements Runnable {
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    gameManager.sendTcpMessageToAllClients(new TcpMessage(o, ChatMessage.class));
+                    UserManager userManager = (UserManager) injector.get(UserManager.class);
+                    ChatMessage chatMessage = new ChatMessage("NORMAL",
+                            ((ChatMessage) o).getUser(),
+                            ((ChatMessage) o).getMessage());
+
+                    gameManager.sendTcpMessageToAllClients(new TcpMessage(tcpMessage.getFrom(), chatMessage, ChatMessage.class));
+
+                    if(chatMessage.getMessage().equalsIgnoreCase("/points")) {
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER", new ChatMessage(
+                                "SERVER", "SERVER", tcpMessage.getFrom() + " posiada " +
+                                userManager.getUserPoints(tcpMessage.getFrom()) + " punktów"), ChatMessage.class));
+                    }
                 } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                     e.printStackTrace();
                 }
 
 
             });
-        }else if(tcpMessage.getOutClass().equals(Answer.class)) {
+        } else if (tcpMessage.getOutClass().equals(Answer.class)) {
             tcpMessage.setHandler(o -> {
                 Injector injector = new Injector();
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    if(gameManager.putAnswer((Answer) o)) {
-                        gameManager.sendTcpMessageToAllClients(new TcpMessage(
+                    UserManager userManager = (UserManager) injector.get(UserManager.class);
+                    if (gameManager.putAnswer((Answer) o)) {
+                        userManager.addPointToUser(tcpMessage.getFrom());
+
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
+                                new ChatMessage("SERVER", "SERVER",
+                                        tcpMessage.getFrom() + " poprawnie odpowiada: " + ((Answer) o).getContent()),
+                                ChatMessage.class));
+
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
                                 gameManager.getCurrentQuestion(), Question.class
                         ));
-                    };
+                    } else {
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
+                                new ChatMessage("SERVER", "SERVER",
+                                        tcpMessage.getFrom() + " błędnie odpowiada: " + ((Answer) o).getContent()),
+                                ChatMessage.class));
+                    }
+
+                } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else if (tcpMessage.getOutClass().equals(User.class)) {
+            System.out.println("TUTAJ " + tcpMessage.getFrom());
+            tcpMessage.setHandler(o -> {
+                Injector injector = new Injector();
+                UserManager userManager = (UserManager) injector.get(UserManager.class);
+                userManager.addUser(((User) o).getName());
+
+                try {
+                    GameManager gameManager = (GameManager) injector.get(GameManager.class);
+                    ChatMessage chatMessage = new ChatMessage("SERVER", "SERVER",
+                            tcpMessage.getFrom() + " + połączył się");
+                    System.out.println(chatMessage.getMessage());
+
+
+                    gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
+                            chatMessage, ChatMessage.class));
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
