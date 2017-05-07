@@ -10,9 +10,8 @@ public class TcpMessage implements Serializable {
         void handle(Object o) throws IllegalAccessException, InstantiationException, ClassNotFoundException;
     }
 
-    private static final Map<Class, Handler> dispatch = new HashMap<>();
+    private Handler handler;
 
-    private String from;
     private Object outObject;
     private Class outClass;
 
@@ -20,14 +19,9 @@ public class TcpMessage implements Serializable {
         
     }
 
-    public TcpMessage(String from, Object outObject, Class outClass) {
-        this.from = from;
+    public TcpMessage(Object outObject, Class outClass) {
         this.outObject = outObject;
         this.outClass = outClass;
-    }
-
-    public String getFrom() {
-        return from;
     }
 
     public Object getOutObject() {
@@ -48,14 +42,10 @@ public class TcpMessage implements Serializable {
     }
 
     public void setHandler(Handler handler) {
-        if(!dispatch.containsKey(outClass)) {
-            dispatch.put(outClass, handler);
-        }
+        this.handler = handler;
     }
 
     public void executeHandler() throws IllegalAccessException, ClassNotFoundException, InstantiationException {
-        Handler handler = dispatch.get(outClass);
-
         if(handler != null) {
             handler.handle(outObject);
         }

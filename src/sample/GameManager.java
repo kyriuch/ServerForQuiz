@@ -46,7 +46,7 @@ public class GameManager implements Runnable {
         Gson gson = new GsonBuilder().enableComplexMapKeySerialization().create();
 
         try {
-            questionsAndAnswersContainer = gson.fromJson(new FileReader("D:\\result.json"), QuestionsAndAnswersContainer.class);
+            questionsAndAnswersContainer = gson.fromJson(new FileReader("result.json"), QuestionsAndAnswersContainer.class);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

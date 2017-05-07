@@ -12,6 +12,7 @@ public class ClientSocket implements Runnable {
 
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
+    private User user;
 
     public ClientSocket(Socket socket) {
         this.socket = socket;
@@ -44,7 +45,7 @@ public class ClientSocket implements Runnable {
         assert gameManager != null;
 
         try {
-            objectOutputStream.writeObject(new TcpMessage("SERVER", gameManager.getCurrentQuestion(), Question.class));
+            objectOutputStream.writeObject(new TcpMessage(gameManager.getCurrentQuestion(), Question.class));
             objectOutputStream.flush();
             objectOutputStream.reset();
             logger.info("Sent Question TcpMessage");
@@ -55,7 +56,7 @@ public class ClientSocket implements Runnable {
         while (isRunning) {
             try {
                 TcpMessage tcpMessage = (TcpMessage) objectInputStream.readObject();
-                logger.info("Got TcpMessage - " + String.valueOf(tcpMessage) + " from " + tcpMessage.getFrom());
+                logger.info("Got TcpMessage - " + String.valueOf(tcpMessage));
 
                 proceedIncomingTcpMessage(tcpMessage);
             } catch (IOException e) {
@@ -93,17 +94,16 @@ public class ClientSocket implements Runnable {
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    UserManager userManager = (UserManager) injector.get(UserManager.class);
                     ChatMessage chatMessage = new ChatMessage("NORMAL",
                             ((ChatMessage) o).getUser(),
                             ((ChatMessage) o).getMessage());
 
-                    gameManager.sendTcpMessageToAllClients(new TcpMessage(tcpMessage.getFrom(), chatMessage, ChatMessage.class));
+                    gameManager.sendTcpMessageToAllClients(new TcpMessage(chatMessage, ChatMessage.class));
 
                     if(chatMessage.getMessage().equalsIgnoreCase("/points")) {
-                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER", new ChatMessage(
-                                "SERVER", "SERVER", tcpMessage.getFrom() + " posiada " +
-                                userManager.getUserPoints(tcpMessage.getFrom()) + " punktów"), ChatMessage.class));
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage(new ChatMessage(
+                                "SERVER", "SERVER", user.getName() + " posiada " +
+                                user.getPoints() + " punktów"), ChatMessage.class));
                     }
                 } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                     e.printStackTrace();
@@ -117,23 +117,20 @@ public class ClientSocket implements Runnable {
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    UserManager userManager = (UserManager) injector.get(UserManager.class);
                     if (gameManager.putAnswer((Answer) o)) {
-                        userManager.addPointToUser(tcpMessage.getFrom());
+                        user.addPoint();
 
-                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
-                                new ChatMessage("SERVER", "SERVER",
-                                        tcpMessage.getFrom() + " poprawnie odpowiada: " + ((Answer) o).getContent()),
-                                ChatMessage.class));
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage(
+                                new ChatMessage("SERVER", "SERVER", user.getName() +
+                                        " poprawnie odpowiada: " + ((Answer) o).getContent()), ChatMessage.class));
 
-                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage(
                                 gameManager.getCurrentQuestion(), Question.class
                         ));
                     } else {
-                        gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
-                                new ChatMessage("SERVER", "SERVER",
-                                        tcpMessage.getFrom() + " błędnie odpowiada: " + ((Answer) o).getContent()),
-                                ChatMessage.class));
+                        gameManager.sendTcpMessageToAllClients(new TcpMessage(new ChatMessage("SERVER",
+                                "SERVER", user.getName() + " błędnie odpowiada: " +
+                                ((Answer) o).getContent()), ChatMessage.class));
                     }
 
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
@@ -141,21 +138,18 @@ public class ClientSocket implements Runnable {
                 }
             });
         } else if (tcpMessage.getOutClass().equals(User.class)) {
-            System.out.println("TUTAJ " + tcpMessage.getFrom());
             tcpMessage.setHandler(o -> {
                 Injector injector = new Injector();
-                UserManager userManager = (UserManager) injector.get(UserManager.class);
-                userManager.addUser(((User) o).getName());
+                this.user = (User) o;
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
                     ChatMessage chatMessage = new ChatMessage("SERVER", "SERVER",
-                            tcpMessage.getFrom() + " + połączył się");
+                            user.getName() + " połączył się");
                     System.out.println(chatMessage.getMessage());
 
 
-                    gameManager.sendTcpMessageToAllClients(new TcpMessage("SERVER",
-                            chatMessage, ChatMessage.class));
+                    gameManager.sendTcpMessageToAllClients(new TcpMessage(chatMessage, ChatMessage.class));
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
