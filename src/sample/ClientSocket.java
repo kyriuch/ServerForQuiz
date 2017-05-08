@@ -159,10 +159,8 @@ public class ClientSocket implements Runnable {
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    ChatMessage chatMessage = new ChatMessage("SERVER", "SERVER",
-                            user.getName() + " połączył się");
-                    System.out.println(chatMessage.getMessage());
-
+                    ChatMessage chatMessage = new ChatMessage("SERVER", "NEWUSER",
+                            user.getName());
 
                     gameManager.sendTcpMessageToAllClients(new TcpMessage(chatMessage, ChatMessage.class));
                 } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
