@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class ClientSocket implements Runnable {
     private Socket socket;
@@ -13,6 +16,8 @@ public class ClientSocket implements Runnable {
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
     private User user;
+
+    private static BlockingQueue<Boolean> blockingQueue = new LinkedBlockingDeque<>();
 
     public ClientSocket(Socket socket) {
         this.socket = socket;
@@ -117,7 +122,17 @@ public class ClientSocket implements Runnable {
 
                 try {
                     GameManager gameManager = (GameManager) injector.get(GameManager.class);
-                    if (gameManager.putAnswer((Answer) o)) {
+
+                    new Thread(() -> {
+                        try {
+                            blockingQueue.put(gameManager.putAnswer((Answer) o));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+
+                    if(blockingQueue.take()) {
+                        blockingQueue.clear();
                         user.addPoint();
 
                         gameManager.sendTcpMessageToAllClients(new TcpMessage(
@@ -133,7 +148,7 @@ public class ClientSocket implements Runnable {
                                 ((Answer) o).getContent()), ChatMessage.class));
                     }
 
-                } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+                } catch (IllegalAccessException | InstantiationException | ClassNotFoundException | InterruptedException e) {
                     e.printStackTrace();
                 }
             });
